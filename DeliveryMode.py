@@ -1,32 +1,14 @@
-from breezypythongui import EasyFrame
-from tkinter import *
-
 """
 Author: Steven Tarmann
 Date: 07/15/2022
 Program to decide between delivery or pickup for PPPORderPlacer
 """
 
-# Should create a "clear screen" function that will destroy all the items on screen instead of typing .destoy() for all items
+# Import modules
+from breezypythongui import EasyFrame
+from tkinter import *
 
-"""
-INPUT
-    User clicks a radio button that asks the user if they are using delivery or pickup
-    Prompts for user address if delivery - asks for zipcode if pickup to find nearest store
 
-OUTPUT
-    pickup or delivery option will be saved
-        if delivery the address will be saved
-        if pickup the zipcode will only be saved
-        in both situations the zipcode will be used to select a store number (this can be generated generically for the purposes of this project or an API call can be used somehow)
-
-PROCESSING
-    Display a window with radio buttons, a title, a label with instructions, and a submit button
-    clears the grid once submit is clicked and either a delivery or a pickup screen shows up
-        delivery screen: has address boxes, a label with insturctions, and a submit button, also has a back button
-        pickup screen: has a zipcode box, a label with instruction, and a submit button, also has a back button
-    displays your closest store at the bottom on both options, and if on delivery it displays that your address has been saved for delivery
-"""
 
 class PickupOrDelivery(EasyFrame):
     """Window that guides a user through selecting pickup or delivery"""
@@ -34,22 +16,28 @@ class PickupOrDelivery(EasyFrame):
         """Creates window and adds Labels, radio buttons, and submit buttons"""
         EasyFrame.__init__(self)
 
+        # Global dictionary to store pickup or delivery information so other .py files can use it once the window is closed
+        global deliverymodeinfo
+        deliverymodeinfo = {}
+        
+        # Heading prompt
         self.prompt = self.addLabel(text="Pickup or Delivery?", row=0, column=0,  sticky="NSEW")
 
+        # Create radio buttons
         self.deliveryModeGroup = self.addRadiobuttonGroup(row=1, column=0, rowspan=2)
         defaultRB = self.deliveryModeGroup.addRadiobutton(text="Pickup")
         self.deliveryModeGroup.addRadiobutton(text="Delivery")
 
         self.deliveryModeGroup.setSelectedButton(defaultRB)
 
+        # Submit button that calls the submitmode method
         self.submit_btn = self.addButton(text="Submit", row=3, column=0, command=self.submitmode)
     
 
     def submitmode(self):
-        """Prompts the user for pickup or delivery information based on radio button input
-        SHOULD HAVE THE IF STATEMENTS EXECUTE FUNCTIONS INSTEAD OF HARD CODING INSIDE THE STATEMENTS"""
+        """Prompts the user for pickup or delivery information based on radio button input"""
 
-        # Clear the screen and add information and a textfield for adding zipcode information to locate closest store
+        # Clear the screen and add information and a textfield for adding information to locate closest store
         if self.deliveryModeGroup.getSelectedButton()["text"] == "Pickup":
             self.mode = "Pickup"
             self.prompt["text"] = "Enter pickup information"
@@ -57,10 +45,17 @@ class PickupOrDelivery(EasyFrame):
             self.submit_btn.destroy()
             self.submit_btn = self.addButton(text="Submit", row=4, column=1, command=self.store)
             self.back_btn = self.addButton(text="<< Back", row=4, column=0, command=self.back)
+
             self.zipcode_label = self.addLabel(text="Zipcode:", row=3, column=0)
             self.zipcode = self.addTextField(row=3, column=1, width=20, text="")
+            self.f_name_label = self.addLabel(text="First Name", row=1, column=0)
+            self.l_name_label = self.addLabel(text="Last Name", row=2, column=0)
+            self.f_name = self.addTextField(row=1, column=1, width=20, text="")
+            self.l_name = self.addTextField(row=2, column=1, width=20, text="")
 
-        # Clear the screen and add information and a textfield for adding address information to locate closest store
+            
+
+        # Clear the screen and add information and a textfield for adding information to locate closest store
         elif self.deliveryModeGroup.getSelectedButton()["text"] == "Delivery":
             self.mode = "Delivery"
             self.prompt["text"] = "Enter delivery information"
@@ -86,19 +81,45 @@ class PickupOrDelivery(EasyFrame):
     def store(self):
         """Notifies the user that their info has been saved, informs them of their service location, and saves their information"""
 
-        # Clears the screen, saves zipcode, and displays message to user
+        # Clears the screen, saves address info, and displays message to user
         if self.mode == "Pickup":
+
+            # Creates a list of values to be added to the global dictionary
+            self.pickuplist = []
+
             self.prompt["text"] = "Your Pickup information has been saved\nYour order will be sent to:"
             self.zip = self.zipcode.getText()
+            self.fname = self.f_name.getText()
+            self.lname = self.l_name.getText()
+
+            # Appends the list of values with the address info
+            self.pickuplist.append(self.zip)
+            self.pickuplist.append(self.fname)
+            self.pickuplist.append(self.lname)
+
+            # Adds the list and delivery mode to the dictionary
+            deliverymodeinfo.update({self.mode:self.pickuplist})
+            
+            # Displays store information and clears the screen
             self.ziplabel = self.addLabel(text="The store closest to zipcode " + self.zip, row=4, column=0)
             self.zipcode.destroy()
+            self.f_name.destroy()
+            self.l_name.destroy()
             
             self.zipcode_label.destroy()
+            self.f_name_label.destroy()
+            self.l_name_label.destroy()
             self.submit_btn.destroy()
             self.back_btn.destroy()
 
+
         # Clears the screen, saves address values, and displays message to user
         elif self.mode == "Delivery":
+
+            # Creates a list of values to be added to the global dictionary
+            self.deliverylist = []
+
+
             self.prompt["text"] = "Your Delivery information has been saved\nYour order will be sent to:"
    
             self.f_name_value = self.f_name.getText()
@@ -108,8 +129,21 @@ class PickupOrDelivery(EasyFrame):
             self.state_value = self.state.getText()
             self.zipcode_value = self.zipcode.getText()
 
+            # Appends the list of values with the address info
+            self.deliverylist.append(self.f_name_value)
+            self.deliverylist.append(self.l_name_value)
+            self.deliverylist.append(self.address_value)
+            self.deliverylist.append(self.city_value)
+            self.deliverylist.append(self.state_value)
+            self.deliverylist.append(self.zipcode_value)
+
+            # Updates the global dictionary with mode and delivery address info
+            deliverymodeinfo.update({self.mode:self.deliverylist})
+
+            # Displays store information
             self.ziplabel = self.addLabel(text="The store closest to zipcode " + self.zipcode_value, row=4, column=0)
 
+            # Clear the screen
             self.f_name.destroy()
             self.f_name_label.destroy()
             self.l_name.destroy()
@@ -131,7 +165,7 @@ class PickupOrDelivery(EasyFrame):
         self.__init__()
 
 
-
+# Main method to create window
 def main():
     root = PickupOrDelivery()
     root.mainloop()
